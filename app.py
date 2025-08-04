@@ -1,10 +1,10 @@
 import streamlit as st
-import openai
+from openai import OpenAI
 import os
 import json
 
-# ✅ Load OpenAI API key from Streamlit Secrets
-openai.api_key = os.getenv("OPENAI_API_KEY")
+# ✅ Initialize OpenAI client
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 # ✅ Streamlit Page Config
 st.set_page_config(page_title="AlphaPulse - Behavioral Trading Assistant", layout="wide")
@@ -18,21 +18,20 @@ stop_pct = st.sidebar.slider("Stop Loss %", 5, 50, 20)
 target_pct = st.sidebar.slider("Target Profit %", 10, 200, 80)
 strategy_pref = st.sidebar.selectbox("Strategy Preference", ["Auto", "Calls Only", "Puts Only", "Debit Spread", "Credit Spread"])
 
-# ✅ Convert Target Prices into Dictionary
+# ✅ Convert target prices into a dictionary
 target_dict = {}
 for pair in targets.split(","):
     if "=" in pair:
         t, v = pair.split("=")
         target_dict[t.strip().upper()] = float(v.strip())
 
-# ✅ Main Title
+# ✅ Main UI
 st.title("📈 AlphaPulse - Behavioral Trading Assistant")
 st.markdown("Generate AI-driven stock & options trade analysis with OCO levels and behavioral checks.")
 
-# ✅ Generate Analysis Button
 if st.button("Generate Trade Analysis"):
     with st.spinner("Analyzing your tickers..."):
-        # ✅ Create Prompt for GPT
+        # ✅ Create Prompt
         prompt = f"""
         Analyze the following trade setup based on behavioral investing principles and options strategy logic.
 
@@ -57,8 +56,8 @@ if st.button("Generate Trade Analysis"):
            - JSON object with trade details
         """
 
-        # ✅ Call GPT
-        response = openai.ChatCompletion.create(
+        # ✅ Call OpenAI API with the new method
+        response = client.chat.completions.create(
             model="gpt-4.1",
             messages=[
                 {"role": "system", "content": "You are AlphaPulse, an AI Behavioral Trading Assistant. Always provide detailed reasoning and JSON output."},
@@ -67,13 +66,13 @@ if st.button("Generate Trade Analysis"):
             temperature=0.3
         )
 
-        result = response['choices'][0]['message']['content']
+        result = response.choices[0].message.content
 
-    # ✅ Display Human-Readable Output
+    # ✅ Display Output
     st.subheader("AI Analysis Summary")
     st.write(result)
 
-    # ✅ Extract JSON from GPT Output
+    # ✅ Extract JSON
     try:
         json_part = result[result.index("{"):result.rindex("}")+1]
         parsed_json = json.loads(json_part)
@@ -85,3 +84,4 @@ if st.button("Generate Trade Analysis"):
 # ✅ Footer
 st.markdown("---")
 st.caption("Powered by AlphaPulse AI | Behavioral Trading Assistant")
+
