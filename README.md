@@ -1,0 +1,1 @@
+# alphapulse-trading-assistant
